@@ -3,7 +3,13 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import OpenAI from 'openai';
 import { randomUUID } from 'crypto';
-import { promises as fs } from 'fs';
+import fs from 'fs';
+import https from 'https';
+
+const SSL_KEY_PATH = process.env.SSL_KEY_PATH
+const SSL_CERT_PATH = process.env.SSL_CERT_PATH
+const isProd = process.env.PROD === 'true';
+
 
 // Load environment variables
 dotenv.config();
@@ -189,7 +195,32 @@ app.post('/chat/completions', async (req: Request, res: Response) => {
   }
 });
 
-// Start server
-app.listen(port, () => {
-  logger.info(`Server running on port ${port}`);
-}); 
+
+
+// Initialize the application
+const startServer = async () => {
+  try {
+    // Initialize TypeORM
+    console.log("Data Source has been initialized!");
+
+    if (isProd) {
+      const httpsOptions = {
+        key: fs.readFileSync(SSL_KEY_PATH || ''),
+        cert: fs.readFileSync(SSL_CERT_PATH || ''),
+      };
+
+      https.createServer(httpsOptions, app).listen(port, () => {
+        console.log(`HTTPS Server is running on port ${port}`);
+      });
+    } else {
+      app.listen(port, () => {
+        console.log(`HTTP Server is running on port ${port}`);
+      });
+    }
+  } catch (error) {
+    console.error('Failed to start server:', error);
+    process.exit(1);
+  }
+};
+
+startServer(); 

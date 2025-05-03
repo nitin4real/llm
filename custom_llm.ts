@@ -6,13 +6,13 @@ import { randomUUID } from 'crypto';
 import fs from 'fs';
 import https from 'https';
 
+dotenv.config();
 const SSL_KEY_PATH = process.env.SSL_KEY_PATH
 const SSL_CERT_PATH = process.env.SSL_CERT_PATH
 const isProd = process.env.PROD === 'true';
 
 
 // Load environment variables
-dotenv.config();
 
 // Type definitions
 interface Message {
@@ -169,6 +169,7 @@ app.post('/chat/completions', async (req: Request, res: Response) => {
     // DEBUG: Received chunk: {"id":"chatcmpl-BSwpxLmsdhLFvVecfQBePPoXJRRDS","object":"chat.completion.chunk","created":1746239053,"model":"gpt-4o-mini-2024-07-18","service_tier":"default","system_fingerprint":"fp_0392822090","choices":[{"index":0,"delta":{},"logprobs":null,"finish_reason":"stop"}]}
     // "choices":[{"index":0,"delta":{"role":"assistant","content":"","refusal":null},"logprobs":null,"finish_reason":null}]}
     // Stream the response
+    logger.info(`${JSON.stringify(completion.choices[0])}`)
     const responseFormat = {
       "choices": [
         {

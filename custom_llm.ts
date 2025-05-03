@@ -5,6 +5,8 @@ import OpenAI from 'openai';
 import { randomUUID } from 'crypto';
 import fs from 'fs';
 import https from 'https';
+import { createServer } from 'http';
+import { Server, Socket } from 'socket.io';
 
 dotenv.config();
 const SSL_KEY_PATH = process.env.SSL_KEY_PATH
@@ -46,6 +48,9 @@ const openai = new OpenAI({
 // Initialize Express app
 const app = express();
 const port = process.env.PORT || 8000;
+
+// Initialize Socket.IO server
+let io: Server;
 
 // Configure logging
 const logger: Logger = {
@@ -139,7 +144,7 @@ const myTools = [{
   }
 }];
 
-// Basic Chat Completions API
+// Socket.IO connection handling
 app.post('/chat/completions', async (req: Request, res: Response) => {
   try {
     logger.info(`Received request: ${JSON.stringify(req.body)}`);
@@ -177,14 +182,13 @@ app.post('/chat/completions', async (req: Request, res: Response) => {
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
     let firstResponse = true
+
     // Create OpenAI streaming completion
     const completion = await openai.chat.completions.create({
       model,
       messages: conversationMessages,
       tools: tools ? tools : undefined,
       tool_choice: "required",
-      // response_format,
-      // stream: true
     });
   
     // Stream the response
@@ -205,6 +209,13 @@ app.post('/chat/completions', async (req: Request, res: Response) => {
       if(toolCall.function.name === "show_question"){
         conversationMessages.push(completion.choices[0].message)
         responseFormat.choices[0].delta.content = args.speechToUser
+        
+        // Emit the question to all connected clients
+        io.emit('new_question', {
+          question: args.questionDescription,
+          options: args.options,
+          id: toolCall.id
+        });
       } else if(toolCall.function.name === "talkToUser"){
         conversationMessages.push(completion.choices[0].message)
         responseFormat.choices[0].delta.content = args.speechToUser
@@ -218,29 +229,10 @@ app.post('/chat/completions', async (req: Request, res: Response) => {
       responseFormat.choices[0].delta.content = completion.choices[0].message.content || "Hmm, I'm not sure what to say."
     }
     logger.info(`${JSON.stringify(conversationMessages)}\n\n\n`)
-    // for await (const chunk of completion) {
-      // logger.debug(`Received chunk: ${JSON.stringify(chunk)}`);
-      // res.write(`data: ${JSON.stringify(chunk)}\n\n`);
-      // if(firstResponse){
-        // responseFormat.id = chunk.id
-        // responseFormat.object = chunk.object
-        // responseFormat.created = chunk.created
-        // responseFormat.model = chunk.model
-        // responseFormat.service_tier = chunk.service_tier || "default"
-        // responseFormat.system_fingerprint = chunk.system_fingerprint || "fp_0392822090"
-    //   }
-    // }
-    // res.send(completion);
-    // return
+    
     res.write(`data: ${JSON.stringify(responseFormat)}\n\n`);
-
-    // End the stream
-    // res.write(`data: ${JSON.stringify({"id":"chatcmpl-BSwpxLmsdhLFvVecfQBePPoXJRRDS","object":"chat.completion.chunk","created":1746239053,"model":"gpt-4o-mini-2024-07-18","service_tier":"default","system_fingerprint":"fp_0392822090","choices":[{"index":0,"delta":{},"logprobs":null,"finish_reason":"stop"}]})}\n\n`)
-    
-    
     res.write('data: [DONE]\n\n');
     res.end();
-
 
   } catch (error) {
     logger.error('Chat completion error:', error as Error);
@@ -256,12 +248,9 @@ app.post('/chat/completions', async (req: Request, res: Response) => {
   }
 });
 
-
-
 // Initialize the application
 const startServer = async () => {
   try {
-    // Initialize TypeORM
     console.log("Data Source has been initialized!");
 
     if (isProd) {
@@ -270,14 +259,58 @@ const startServer = async () => {
         cert: fs.readFileSync(SSL_CERT_PATH || ''),
       };
 
-      https.createServer(httpsOptions, app).listen(port, () => {
-        console.log(`HTTPS Server is running on port ${port}`);
+      const httpsServer = https.createServer(httpsOptions, app);
+      io = new Server(httpsServer, {
+        cors: {
+          origin: "*",
+          methods: ["GET", "POST"]
+        }
+      });
+
+      httpsServer.listen(port, () => {
+        console.log(`HTTPS Server with Socket.IO is running on port ${port}`);
       });
     } else {
-      app.listen(port, () => {
-        console.log(`HTTP Server is running on port ${port}`);
+      const httpServer = createServer(app);
+      io = new Server(httpServer, {
+        cors: {
+          origin: "*",
+          methods: ["GET", "POST"]
+        }
+      });
+
+      httpServer.listen(port, () => {
+        console.log(`HTTP Server with Socket.IO is running on port ${port}`);
       });
     }
+
+    // Socket.IO connection handling
+    io.on('connection', (socket: Socket) => {
+      console.log('A user connected');
+      // reset the conversation array
+      conversationMessages = [
+        {
+          role: "system",
+          content: "You are a helpful math teacher that asks user some multiple choice questions and help with solving and understanding the questions."
+        },
+        {
+          role: "assistant",
+          content: "Hello, I'm Baiju Raveendran, your math teacher. I can help you learn new concepts and solve problems. Let's start."
+        }
+      ]
+      socket.on('answer_submitted', (data: { answer: string; question: string }) => {
+        console.log('Answer received:', data);
+        // Add the user's answer to the conversation
+        conversationMessages.push({
+          role: "user",
+          content: `I selected option ${data.answer} for the question: ${data.question}`
+        });
+      });
+
+      socket.on('disconnect', () => {
+        console.log('User disconnected');
+      });
+    });
   } catch (error) {
     console.error('Failed to start server:', error);
     process.exit(1);

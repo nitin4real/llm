@@ -278,6 +278,9 @@ app.post('/chat/completions', async (req: Request, res: Response) => {
 
     if (completion.choices[0].message.tool_calls) {
       const toolCall = completion.choices[0].message.tool_calls[0];
+      if(completion.choices[0].message.tool_calls.length > 1){
+        completion.choices[0].message.tool_calls = [completion.choices[0].message.tool_calls[0]];
+      }
       const args = JSON.parse(toolCall.function.arguments);
       if (toolCall.function.name === "show_question") {
         conversationMessages.push(completion.choices[0].message)

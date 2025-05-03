@@ -158,15 +158,18 @@ app.get('/', (req: Request, res: Response) => {
   });
 });
 
-
+const intro = "Hello, I'm Baiju Raveendran, your math teacher. I can help you learn new concepts and solve problems. Let's start with some basic math questions. are you ready ?"
 let conversationMessages = [
   {
     role: "system",
-    content: "You are a helpful math teacher that asks user some multiple choice questions and help with solving and understanding the questions."
+    content: `You are a helpful math teacher that asks user some multiple choice questions and help with solving and understanding the questions. The user will be a student. 
+    Always stay in character and avoid repetition. 
+    Only dialogue content is allowed when sending speech to user, adding any descriptions of actions, expressions, or scenes is not permitted in speech to user. Please state any formula verbally, using only spoken words and avoiding any mathematical symbols or notation in speech to user.”
+`
   },
   {
     role: "assistant",
-    content: "Hello, I'm Baiju Raveendran, your math teacher. I can help you learn new concepts and solve problems. Let's start."
+    content: intro
   }
 ] as any
 
@@ -364,7 +367,7 @@ app.post('/start/:agentId', async (req: Request, res: Response) => {
 
     // Generate system prompt for the agent
     let systemPrompt = "You are a helpful AI assistant.";
-    let introduction = "Hello! I'm your AI assistant. How can I help you today?";
+    let introduction = intro
     const voiceId = process.env.ELEVENLABS_VOICE_ID || '';
 
     // Start the agent with the generated token and system prompt
@@ -447,7 +450,7 @@ class AgentService {
         voice_id: voiceId || "21m00Tcm4TlvDq8ikWAM",
         stability: 1,
         similarity_boost: 0.75,
-        // speed: 90
+        speed: 90
       }
     }
  
@@ -573,9 +576,10 @@ const startServer = async () => {
         // Add the user's answer to the conversation
         conversationMessages.push({
           role: "user",
-          content: `I selected option ${data.answer} for the question: ${data.question}`
+          content: `I selected -> ${data.answer} for the question: ${data.question}`
         });
       });
+      // here add this to the list and generate a response and send it directly to the TTS.
 
       socket.on('disconnect', () => {
         console.log('User disconnected');

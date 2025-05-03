@@ -84,6 +84,10 @@ let conversationMessages = [
   {
     role: "system",
     content: "You are a helpful math teacher that asks user some multiple choice questions and help with solving and understanding the questions."
+  },
+  {
+    role: "assistant",
+    content: "Hello, I'm Baiju Raveendran, your math teacher. I can help you learn new concepts and solve problems. Let's start."
   }
 ] as any
 
@@ -105,13 +109,13 @@ const myTools = [{
           items: {
             type: "string"
           },
-          minItems: 4,
-          maxItems: 4,
-          description: "An array of 4 answer options"
+          minItems: 2,
+          maxItems: 6,
+          description: "An array of answer options"
         },
         speechToUser: {
           type: "string",
-          description: "The introduction to the question. Only use vocal responses."
+          description: "The introduction to the question. Only use vocal responses. Approx 30-40 words"
         }
       },
       required: ["questionDescription", "options", "speechToUser"]
@@ -121,13 +125,13 @@ const myTools = [{
   type: "function",
   function: {
     name: "talkToUser",
-    description: "Use this tool to discuss the question with the user. Only use vocal responses.",
+    description: "Use this tool to discuss with the user. Only use vocal responses. Approx 30-40 words",
     parameters: {
       type: "object",
       properties: {
         speechToUser: {
           type: "string",
-          description: "The text of the discussion to the user. Only use vocal responses."
+          description: "The text of the discussion to the user. Only use vocal responses. Approx 30-40 words"
         },
       },
       required: ["speechToUser"]

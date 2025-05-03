@@ -138,7 +138,7 @@ const myTools = [{
 // Basic Chat Completions API
 app.post('/chat/completions', async (req: Request, res: Response) => {
   try {
-    logger.info(`Received request: ${JSON.stringify(req.body)}`);
+    // logger.info(`Received request: ${JSON.stringify(req.body)}`);
 
     const {
       model = 'gpt-4o-mini',
@@ -208,7 +208,7 @@ app.post('/chat/completions', async (req: Request, res: Response) => {
       conversationMessages.push({
         role: "tool",
         content: "Sent To the user",
-        id: toolCall.id
+        tool_call_id: toolCall.id
       })
     } else {
       responseFormat.choices[0].delta.content = completion.choices[0].message.content || "Hmm, I'm not sure what to say."

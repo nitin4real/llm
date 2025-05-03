@@ -83,6 +83,7 @@ interface StartAgentConfig {
 interface AgentProperties {
   channel: string;
   token: string;
+  graph_id?: string;
   agent_rtc_uid: string;
   remote_rtc_uids: string[];
   enable_string_uid: boolean;
@@ -453,6 +454,7 @@ class AgentService {
     return {
       channel: channelName,
       token: token,
+      graph_id: "1.3.1-123-g17c1156", // v3 
       agent_rtc_uid: agentUid,
       remote_rtc_uids: ["*"], // use req user id as remote uid
       enable_string_uid: false,

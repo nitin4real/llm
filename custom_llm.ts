@@ -79,6 +79,15 @@ app.get('/', (req: Request, res: Response) => {
   });
 });
 
+
+let conversationMessages = [
+  {
+    role: "system",
+    content: "You are a helpful math teacher that asks user some multiple choice questions and help with solving and understanding the questions."
+  }
+] as any
+
+
 const myTools = [{
   type: "function",
   function: {
@@ -152,6 +161,13 @@ app.post('/chat/completions', async (req: Request, res: Response) => {
         .json({ detail: 'chat completions require streaming' });
     }
 
+    if(messages.length > 0){
+      const userMessage = messages[messages.length - 1]
+      if(userMessage.role == 'user'){
+        conversationMessages.push(userMessage)
+      }
+    }
+
     // Set SSE headers
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
@@ -160,16 +176,14 @@ app.post('/chat/completions', async (req: Request, res: Response) => {
     // Create OpenAI streaming completion
     const completion = await openai.chat.completions.create({
       model,
-      messages,
+      messages: conversationMessages,
       tools: tools ? tools : undefined,
       tool_choice: "required",
-      response_format,
+      // response_format,
       // stream: true
     });
-    // DEBUG: Received chunk: {"id":"chatcmpl-BSwpxLmsdhLFvVecfQBePPoXJRRDS","object":"chat.completion.chunk","created":1746239053,"model":"gpt-4o-mini-2024-07-18","service_tier":"default","system_fingerprint":"fp_0392822090","choices":[{"index":0,"delta":{},"logprobs":null,"finish_reason":"stop"}]}
-    // "choices":[{"index":0,"delta":{"role":"assistant","content":"","refusal":null},"logprobs":null,"finish_reason":null}]}
+  
     // Stream the response
-    logger.info(`${JSON.stringify(completion.choices[0])}`)
     const responseFormat = {
       "choices": [
         {
@@ -185,13 +199,21 @@ app.post('/chat/completions', async (req: Request, res: Response) => {
       const toolCall = completion.choices[0].message.tool_calls[0];
       const args = JSON.parse(toolCall.function.arguments);
       if(toolCall.function.name === "show_question"){
+        conversationMessages.push(completion.choices[0].message)
         responseFormat.choices[0].delta.content = args.speechToUser
       } else if(toolCall.function.name === "talkToUser"){
+        conversationMessages.push(completion.choices[0].message)
         responseFormat.choices[0].delta.content = args.speechToUser
       }
+      conversationMessages.push({
+        role: "tool",
+        content: "Sent To the user",
+        id: toolCall.id
+      })
     } else {
       responseFormat.choices[0].delta.content = completion.choices[0].message.content || "Hmm, I'm not sure what to say."
     }
+    logger.info(`${JSON.stringify(conversationMessages)}\n\n\n`)
     // for await (const chunk of completion) {
       // logger.debug(`Received chunk: ${JSON.stringify(chunk)}`);
       // res.write(`data: ${JSON.stringify(chunk)}\n\n`);

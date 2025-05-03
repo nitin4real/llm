@@ -108,7 +108,7 @@ const myTools = [{
       required: ["questionDescription", "options", "speechToUser"]
     }
   }
-},{
+}, {
   type: "function",
   function: {
     name: "talkToUser",
@@ -156,27 +156,61 @@ app.post('/chat/completions', async (req: Request, res: Response) => {
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
-
+    let firstResponse = true
     // Create OpenAI streaming completion
     const completion = await openai.chat.completions.create({
       model,
       messages,
       tools: tools ? tools : undefined,
-      tool_choice: "none",
+      tool_choice: "required",
       response_format,
-      stream: true
+      // stream: true
     });
-
+    // DEBUG: Received chunk: {"id":"chatcmpl-BSwpxLmsdhLFvVecfQBePPoXJRRDS","object":"chat.completion.chunk","created":1746239053,"model":"gpt-4o-mini-2024-07-18","service_tier":"default","system_fingerprint":"fp_0392822090","choices":[{"index":0,"delta":{},"logprobs":null,"finish_reason":"stop"}]}
+    // "choices":[{"index":0,"delta":{"role":"assistant","content":"","refusal":null},"logprobs":null,"finish_reason":null}]}
     // Stream the response
-    for await (const chunk of completion) {
-      logger.debug(`Received chunk: ${JSON.stringify(chunk)}`);
-      res.write(`data: ${JSON.stringify(chunk)}\n\n`);
+    const responseFormat = {
+      "choices": [
+        {
+          "index": 0,
+          "delta": {
+            "content": ""
+          },
+          "finish_reason": null
+        }]
     }
+
+    if(completion.choices[0].message.tool_calls){
+      const toolCall = completion.choices[0].message.tool_calls[0];
+      const args = JSON.parse(toolCall.function.arguments);
+      if(toolCall.function.name === "show_question"){
+        responseFormat.choices[0].delta.content = args.speechToUser
+      } else if(toolCall.function.name === "talkToUser"){
+        responseFormat.choices[0].delta.content = args.speechToUser
+      }
+    } else {
+      responseFormat.choices[0].delta.content = completion.choices[0].message.content || "Hmm, I'm not sure what to say."
+    }
+    // for await (const chunk of completion) {
+      // logger.debug(`Received chunk: ${JSON.stringify(chunk)}`);
+      // res.write(`data: ${JSON.stringify(chunk)}\n\n`);
+      // if(firstResponse){
+        // responseFormat.id = chunk.id
+        // responseFormat.object = chunk.object
+        // responseFormat.created = chunk.created
+        // responseFormat.model = chunk.model
+        // responseFormat.service_tier = chunk.service_tier || "default"
+        // responseFormat.system_fingerprint = chunk.system_fingerprint || "fp_0392822090"
+    //   }
+    // }
     // res.send(completion);
     // return
-      // res.write(`data: ${JSON.stringify(completion)}\n\n`);
+    res.write(`data: ${JSON.stringify(responseFormat)}\n\n`);
 
     // End the stream
+    // res.write(`data: ${JSON.stringify({"id":"chatcmpl-BSwpxLmsdhLFvVecfQBePPoXJRRDS","object":"chat.completion.chunk","created":1746239053,"model":"gpt-4o-mini-2024-07-18","service_tier":"default","system_fingerprint":"fp_0392822090","choices":[{"index":0,"delta":{},"logprobs":null,"finish_reason":"stop"}]})}\n\n`)
+    
+    
     res.write('data: [DONE]\n\n');
     res.end();
 

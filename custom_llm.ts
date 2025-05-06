@@ -157,15 +157,15 @@ app.get('/', (req: Request, res: Response) => {
     ],
   });
 });
-
+const prompt = `You are a helpful math teacher that asks user some multiple choice questions and help with solving and understanding the questions. The user will be a student. 
+    Always stay in character and avoid repetition. 
+    `
+    // Only dialogue content is allowed when sending speech to user, adding any descriptions of actions, expressions, or scenes is not permitted in speech to user. Please state any formula verbally, using only spoken words and avoiding any mathematical symbols or notation in speech to user.”
 const intro = "Hello, I'm Baiju Raveendran, your math teacher. I can help you learn new concepts and solve problems. Let's start with some basic math questions. are you ready ?"
 let conversationMessages = [
   {
     role: "system",
-    content: `You are a helpful math teacher that asks user some multiple choice questions and help with solving and understanding the questions. The user will be a student. 
-    Always stay in character and avoid repetition. 
-    Only dialogue content is allowed when sending speech to user, adding any descriptions of actions, expressions, or scenes is not permitted in speech to user. Please state any formula verbally, using only spoken words and avoiding any mathematical symbols or notation in speech to user.”
-`
+    content: prompt
   },
   {
     role: "assistant",
@@ -247,12 +247,18 @@ app.post('/chat/completions', async (req: Request, res: Response) => {
         .json({ detail: 'chat completions require streaming' });
     }
 
+
     if (messages.length > 0) {
       const userMessage = messages[messages.length - 1]
       if (userMessage.role == 'user') {
         conversationMessages.push(userMessage)
+        io.emit('transcript', {
+          isAgent: false,
+          transcript: userMessage.content
+        });
       }
     }
+
 
     // Set SSE headers
     res.setHeader('Content-Type', 'text/event-stream');
@@ -290,6 +296,11 @@ app.post('/chat/completions', async (req: Request, res: Response) => {
         conversationMessages.push(completion.choices[0].message)
         responseFormat.choices[0].delta.content = args.speechToUser
 
+        io.emit('transcript', {
+          isAgent: true,
+          transcript: args.speechToUser
+        });
+
         // Emit the question to all connected clients
         io.emit('new_question', {
           question: args.questionDescription,
@@ -297,6 +308,10 @@ app.post('/chat/completions', async (req: Request, res: Response) => {
           id: toolCall.id
         });
       } else if (toolCall.function.name === "talkToUser") {
+        io.emit('transcript', {
+          isAgent: true,
+          transcript: args.speechToUser
+        });
         conversationMessages.push(completion.choices[0].message)
         responseFormat.choices[0].delta.content = args.speechToUser
       }
@@ -561,16 +576,21 @@ const startServer = async () => {
     io.on('connection', (socket: Socket) => {
       console.log('A user connected');
       // reset the conversation array
+      
       conversationMessages = [
         {
           role: "system",
-          content: "You are a helpful math teacher that asks user some multiple choice questions and help with solving and understanding the questions."
+          content: prompt
         },
         {
           role: "assistant",
-          content: "Hello, I'm Baiju Raveendran, your math teacher. I can help you learn new concepts and solve problems. Let's start."
+          content: intro
         }
       ]
+      io.emit('transcript', {
+        isAgent: true,
+        transcript: intro
+      });
       socket.on('answer_submitted', (data: { answer: string; question: string }) => {
         console.log('Answer received:', data);
         // Add the user's answer to the conversation

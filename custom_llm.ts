@@ -377,6 +377,10 @@ app.post('/chat/completions', async (req: Request, res: Response) => {
       } else if (toolCall.function.name === 'show_image') {
         conversationMessages.push(completion.choices[0].message)
         const imageData = getImageByConceptName(args.conceptName)
+        io.emit('transcript', {
+          isAgent: true,
+          transcript: args.speechToUser
+        });
         conversationMessages.push({
           role: "tool",
           content: `The image shown to user is of ->  ${imageData.description}`,

@@ -9,6 +9,7 @@ import Logger from './logger.service';
 import SignalingService from './signaling.service';
 import { config } from '../config/config';
 import { ChatMessage } from './llm.service';
+import { authenticateToken } from '../middleware/auth.middleware';
 
 
 
@@ -26,7 +27,7 @@ export interface UserSession {
     settings: {
         [key: string]: any;
     };
-    signalingConnection: SignalingService;
+    socketConnection: Socket | null;
     chatHistory: ChatMessage[];
     convoAgentId: string;
     lastHeartbeat: number;
@@ -56,6 +57,14 @@ class UserSessionService {
             UserSessionService.instance = new UserSessionService();
         }
         return UserSessionService.instance;
+    }
+
+    authenticateUser(token: string): number {
+        const user = authenticateToken(token);
+        if (!user) {
+            throw new Error('User not found');
+        }
+        return Number(user.id);
     }
 
     private async startHeartbeat(convoAgentId: string, secondsRemaining: number, userId: number): Promise<void> {
@@ -128,8 +137,8 @@ class UserSessionService {
         try {
             const stopAgentResponse = await agentService.stopAgent(convoAgentId);
             const userSession = this.getUserSession(userId);
-            if (userSession && userSession.signalingConnection) {
-                userSession.signalingConnection.disconnect();
+            if (userSession && userSession.socketConnection) {
+                userSession.socketConnection.disconnect();
             }
             return stopAgentResponse;
         } catch (error) {
@@ -202,16 +211,15 @@ class UserSessionService {
         ]
 
         const convoAgentId = agentResponse.agent_id
-        const signallingService = new SignalingService(config.agora.appId || '', backendRtmId, rtmTokenForBackend.token, channelName);
-        const loginResponse = await signallingService.connect();
+        
         const session: UserSession = {
             userId,
             settings: {},
-            signalingConnection: signallingService,
             chatHistory,
             convoAgentId,
             lastHeartbeat: Date.now(),
-            secondsRemaining: userMetadata.metadata.remainingSeconds
+            secondsRemaining: userMetadata.metadata.remainingSeconds,
+            socketConnection: null
         }
 
         this.setUserSession(userId, session);
@@ -229,6 +237,27 @@ class UserSessionService {
     public removeUser(userId: number): void {
         this.activeUsers.delete(userId);
         this.eventEmitter.emit('userRemoved', userId);
+    }
+
+    public setSocketConnection(userId: number, socketConnection: Socket): void {
+        const userSession = this.activeUsers.get(userId);
+        if (userSession) {
+            userSession.socketConnection = socketConnection;
+            this.setUserSession(userId, userSession);
+
+            socketConnection.on('disconnect', () => {
+                Logger.info(`User ${userId} disconnected`);
+            }); 
+            socketConnection.on('heartbeat', () => {
+                Logger.info(`User ${userId} heartbeat`);
+            });
+            socketConnection.on('message', (message: string) => {
+                Logger.info(`User ${userId} message: ${message}`);
+            });
+            socketConnection.on('answer_submitted', (answer: string) => {
+                Logger.info(`User ${userId} answer: ${answer}`);
+            });
+        }
     }
 
     public updateUserActivity(userId: number, updates: Partial<UserSession>): void {

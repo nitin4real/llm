@@ -122,7 +122,8 @@ class ChatService {
         if (!userSession) {
             throw new Error("User session not found");
         }
-        userSession.signalingConnection.sendMessage(functionArguments.speechToUser);
+        loggerService.info('Sending message to user', functionArguments.speechToUser);
+        userSession.socketConnection?.emit('message', functionArguments.speechToUser);
         if (functionName === "show_question") {
             messages.push({
                 role: "tool",

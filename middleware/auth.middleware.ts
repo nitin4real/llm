@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { config } from '../config/config';
-
+import loggerService from '../services/logger.service';
 export const authMiddleware = async (
   req: any,
   res: any,
@@ -31,3 +31,13 @@ export const authMiddleware = async (
     return res.status(500).json({ message: 'Internal server error' });
   }
 }; 
+
+export const authenticateToken = (token: string) => {
+  try {
+    const decoded = jwt.verify(token, config.jwtSecret) as { id: string | number; agentName: string };
+    return decoded;
+  } catch (error) {
+    loggerService.error('Authentication failed', token);
+    return null;
+  }
+}

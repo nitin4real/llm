@@ -20,4 +20,8 @@ export const config = {
   openai: {
     apiKey: process.env.OPENAI_API_KEY,
   },
+  ssl: {
+    key: process.env.SSL_KEY_PATH,
+    cert: process.env.SSL_CERT_PATH
+  }
 }; 

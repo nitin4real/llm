@@ -45,8 +45,8 @@ const initializeServer = () => {
 
     if (config.nodeEnv === 'production') {
         const httpsOptions = {
-            key: fs.readFileSync('/path/to/private.key'),
-            cert: fs.readFileSync('/path/to/certificate.crt')
+            key: fs.readFileSync(config.ssl.key || ''),
+            cert: fs.readFileSync(config.ssl.cert || '')
         };
         server = https.createServer(httpsOptions, app);
     } else {

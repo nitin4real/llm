@@ -43,7 +43,7 @@ export class AgentService {
       enable_string_uid: true,
       idle_timeout: 120,
       llm: {
-        url: process.env.LLM_URL || '',
+        url: process.env.LLM_SERVICE_URL || '',
         api_key: llm_api_key || '',
         system_messages: [
           {

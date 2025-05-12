@@ -122,22 +122,30 @@ class ChatService {
         if (!userSession) {
             throw new Error("User session not found");
         }
+        const io = userSession.socketConnection
+        if(!io) return
         loggerService.info('Sending message to user', functionArguments.speechToUser);
-        userSession.socketConnection?.emit('message', functionArguments.speechToUser);
         if (functionName === "show_question") {
             messages.push({
                 role: "tool",
                 content: "Sent To the user",
                 tool_call_id: toolId
             })
+            io.emit('new_question', {
+                question: functionArguments.questionDescription,
+                options: functionArguments.options,
+              });
         } else if (functionName === "talkToUser") {
             messages.push({
                 role: "tool",
                 content: "Sent To the user",
                 tool_call_id: toolId
             })
-        } else if (functionName === 'show_image') {
+        } else if (functionName === 'show_image') {                  
             const imageData = this.getImageByConceptName(functionArguments.conceptName)
+            io.emit('content', {
+                imageUrl: imageData.imageUrl
+            })
             messages.push({
                 role: "tool",
                 content: `The image shown to user is of ->  ${imageData.description}`,

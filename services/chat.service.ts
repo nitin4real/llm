@@ -111,13 +111,18 @@ class ChatService {
             const functionName = functionDetails.function.name;
             const functionArguments = JSON.parse(functionDetails.function.arguments);
             formatedResponse.content = functionArguments.speechToUser;
-            await this.callFunction(functionName, functionArguments, updatedMessages, functionDetails.id);
+            await this.callFunction(functionName, functionArguments, updatedMessages, functionDetails.id, userId);
         }
         this.userSessionService.updateUserActivity(userId, { chatHistory: updatedMessages });
         return formatedResponse;
     }
 
-    callFunction = async (functionName: string, functionArguments: any, messages: ChatMessage[], toolId: string) => {
+    callFunction = async (functionName: string, functionArguments: any, messages: ChatMessage[], toolId: string, userId: number) => {
+        const userSession = this.userSessionService.getUserSession(userId);
+        if (!userSession) {
+            throw new Error("User session not found");
+        }
+        userSession.signalingConnection.sendMessage(functionArguments.speechToUser);
         if (functionName === "show_question") {
             messages.push({
                 role: "tool",

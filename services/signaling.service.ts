@@ -9,7 +9,7 @@ class SignalingConnection {
     private token: string;
 
     constructor(appId: string, uid: number, token: string, channelName: string) {
-        this.rtmClient = new RTM(appId, uid.toString());
+        this.rtmClient = new RTM(appId, uid.toString(), { token });
         this.channelName = channelName;
         this.uid = uid;
         this.token = token;

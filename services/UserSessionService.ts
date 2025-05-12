@@ -202,9 +202,8 @@ class UserSessionService {
         ]
 
         const convoAgentId = agentResponse.agent_id
-        const signallingService = new SignalingService(config.agora.appId || '', userId, rtmTokenForBackend.token, channelName);
-        // const loginResponse = await signallingService.connect();
-
+        const signallingService = new SignalingService(config.agora.appId || '', backendRtmId, rtmTokenForBackend.token, channelName);
+        const loginResponse = await signallingService.connect();
         const session: UserSession = {
             userId,
             settings: {},

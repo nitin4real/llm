@@ -223,7 +223,7 @@ class UserSessionService {
             channelName,
             rtcAppId: config.agora.appId || '',
             rtcUid: userId,
-            rtmToken: rtmTokenForBackend.token
+            rtmToken: tokensForUser.rtmToken
         }
     }
 

@@ -9,8 +9,8 @@ export const listOfImagesWithConcepts = {
       description: 'Image of a right angle triangle showing theta, hypotenuse h, opposite side o and adjecent a.'
     },
     "numbers": {
-      imageUrl: "https://s3.eu-central-1.amazonaws.com/studysmarter-mediafiles/media/1865576/summary_images/Untitled_Artwork_3.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIA4OLDUDE42UZHAIET%2F20250502%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20250502T160812Z&X-Amz-Expires=604800&X-Amz-SignedHeaders=host&X-Amz-Signature=8928baad0cbeff8e26d193aff2051f7d9c687ce88bc1584a0a1de04686a30836",
-      description: "Image of number system devision"
+      imageUrl: "https://s3.eu-central-1.amazonaws.com/studysmarter-mediafiles/media/1865576/summary_images/Untitled_Artwork_93.jpg?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIA4OLDUDE42UZHAIET%2F20250509%2Feu-central-1%2Fs3%2Faws4_request&X-Amz-Date=20250509T030747Z&X-Amz-Expires=604800&X-Amz-SignedHeaders=host&X-Amz-Signature=a9f66894cf391913c7c73db0c54dde0681861c653568d9e1de9f65825f717c92",
+      description: "Image of number system, Natural numbers, Whole numbers, Integers, Rational numbers, Irrational numbers, Real numbers, Complex numbers. It shows the relationship between the different types of numbers."
     },
     "circles": {
       imageUrl: "https://dictionary.cambridge.org/images/thumb/circle_noun_001_02738.jpg?version=6.0.49",

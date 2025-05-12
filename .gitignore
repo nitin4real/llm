@@ -1,2 +1,6 @@
 .env
 node_modules
+db/database.json
+db/user.db.test.ts
+db/user-metadata.json
+dist

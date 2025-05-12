@@ -1,0 +1,12 @@
+{
+  "watch": ["src", "routes", "middleware", "services", "db"],
+  "ext": "ts,json",
+  "ignore": [
+    "db/database.json",
+    "db/user-metadata.json",
+    "node_modules",
+    "dist",
+    "*.test.ts"
+  ],
+  "exec": "ts-node ./app.ts"
+} 

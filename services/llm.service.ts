@@ -18,23 +18,26 @@ export interface LLMConfig {
 }
 
 export interface FunctionCall {
-    name: string;
-    arguments: string;
-    tool_call_id: string
+    id: string;
+    type: string;
+    function: {
+        name: string;
+        arguments: string;
+    }
 }
 
 export interface ChatMessage {
     role: 'system' | 'user' | 'assistant' | 'tool';
     content: string | null;
     name?: string;
-    function_call?: FunctionCall[];
+    tool_calls?: FunctionCall[];
     tool_call_id?: string;
 }
 
 export interface LLMResponse {
     role: "assistant";
     content: string;
-    function_calls?: FunctionCall[];
+    tool_calls?: FunctionCall[];
     finish_reason: string;
 }
 
@@ -60,6 +63,8 @@ export class LLMService {
             const baseMessage = {
                 role: msg.role,
                 content: msg.content,
+                tool_calls: msg.tool_calls,
+                tool_call_id: msg.tool_call_id
             };
             return baseMessage as ChatCompletionMessageParam;
         });
@@ -70,7 +75,7 @@ export class LLMService {
         config: Partial<LLMConfig> = {},
         functions?: ChatCompletionTool[],
         stream: boolean = false
-    ): Promise<LLMResponse> {
+    ): Promise<OpenAI.Chat.Completions.ChatCompletion.Choice> {
         const finalConfig = { ...this.defaultConfig, ...config };
 
         const params: ChatCompletionCreateParams = {
@@ -96,17 +101,7 @@ export class LLMService {
             } else {
                 const response = await this.openai.chat.completions.create(params) as ChatCompletion;
                 const choice = response.choices[0];
-
-                return {
-                    role: "assistant",
-                    content: choice.message.content || '',
-                    function_calls: choice.message.tool_calls ? [{
-                        name: choice.message.tool_calls[0].function.name,
-                        arguments: choice.message.tool_calls[0].function.arguments,
-                        tool_call_id: choice.message.tool_calls[0].id
-                    }] : undefined,
-                    finish_reason: choice.finish_reason || 'stop',
-                };
+                return choice;
             }
         } catch (error) {
             console.error('Error in LLM service:', error);
@@ -131,27 +126,27 @@ export class LLMService {
                     onChunk(delta.content);
                 }
 
-                if (delta?.tool_calls) {
-                    if (!functionCall) {
-                        functionCall = {
-                            name: delta?.tool_calls[0]?.function?.name || '',
-                            arguments: delta?.tool_calls[0]?.function?.arguments || '',
-                            tool_call_id: delta?.tool_calls[0]?.id || ''
-                        };
-                    } else {
-                        functionCall.arguments += delta?.tool_calls[0]?.function?.arguments || '';
-                    }
+                // if (delta?.tool_calls) {
+                //     if (!functionCall) {
+                //         functionCall = {
+                //             name: delta?.tool_calls[0]?.function?.name || '',
+                //             arguments: delta?.tool_calls[0]?.function?.arguments || '',
+                //             id: delta?.tool_calls[0]?.id || ''
+                //         };
+                //     } else {
+                //         functionCall.arguments += delta?.tool_calls[0]?.function?.arguments || '';
+                //     }
 
-                    if (onFunctionCall && delta?.tool_calls[0]?.function?.name) {
-                        onFunctionCall(functionCall);
-                    }
-                }
+                //     if (onFunctionCall && delta?.tool_calls[0]?.function?.name) {
+                //         onFunctionCall(functionCall);
+                //     }
+                // }
             }
 
             return {
                 role: "assistant",
                 content,
-                function_calls: functionCall ? [functionCall] : undefined,
+                tool_calls: functionCall ? [functionCall] : undefined,
                 finish_reason: 'stop',
             };
         } catch (error) {

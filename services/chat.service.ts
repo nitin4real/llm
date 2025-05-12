@@ -97,21 +97,21 @@ class ChatService {
         const updatedMessages = [...chatHistory, lastMessage];
         const response = await this.llmService.chat(updatedMessages, {}, userFunctions);
 
-        const { content, function_calls, finish_reason } = response;
-        const formatedResponse: LLMResponse = { role: "assistant", content, finish_reason };
-        const functionDetails = function_calls?.[0];
+        const { content, tool_calls, } = response.message;
+        const formatedResponse: LLMResponse = { role: "assistant", content: content || '', finish_reason: 'stop' };
+        const functionDetails = tool_calls?.[0];
 
         updatedMessages.push({
             role: "assistant",
-            content: response.content,
-            function_call: functionDetails ? [functionDetails] : []
+            content: response.message.content,
+            tool_calls: functionDetails ? [functionDetails] : []
         })
 
         if (functionDetails) {
-            const functionName = functionDetails.name;
-            const functionArguments = JSON.parse(functionDetails.arguments);
+            const functionName = functionDetails.function.name;
+            const functionArguments = JSON.parse(functionDetails.function.arguments);
             formatedResponse.content = functionArguments.speechToUser;
-            await this.callFunction(functionName, functionArguments, updatedMessages, functionDetails.tool_call_id);
+            await this.callFunction(functionName, functionArguments, updatedMessages, functionDetails.id);
         }
         this.userSessionService.updateUserActivity(userId, { chatHistory: updatedMessages });
         return formatedResponse;

@@ -211,7 +211,7 @@ class UserSessionService {
         ]
 
         const convoAgentId = agentResponse.agent_id
-        
+
         const session: UserSession = {
             userId,
             settings: {},
@@ -247,15 +247,27 @@ class UserSessionService {
 
             socketConnection.on('disconnect', () => {
                 Logger.info(`User ${userId} disconnected`);
-            }); 
+            });
             socketConnection.on('heartbeat', () => {
                 Logger.info(`User ${userId} heartbeat`);
             });
             socketConnection.on('message', (message: string) => {
                 Logger.info(`User ${userId} message: ${message}`);
             });
-            socketConnection.on('answer_submitted', (answer: string) => {
-                Logger.info(`User ${userId} answer: ${answer}`);
+            socketConnection.on('answer_submitted', ({
+                answer,
+                question
+            }: {
+                answer: string;
+                question: string;
+            }) => {
+                const userSession = this.getUserSession(userId);
+                if (userSession) {
+                    userSession.chatHistory.push({
+                        role: "system",
+                        content: `User has submitted answer: ${answer} for question: ${question}`
+                    })
+                }
             });
         }
     }

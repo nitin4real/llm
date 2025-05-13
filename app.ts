@@ -100,17 +100,17 @@ const initializeServer = () => {
 
         socket.on('disconnect', async () => {
             console.log('Client disconnected');
-            const userSessionService = UserSessionService.getInstance();
-            const activeUsers = userSessionService.getAllActiveUsers();
-            const userSession = activeUsers.find(session => session.socketConnection === socket);
+            // const userSessionService = UserSessionService.getInstance();
+            // const activeUsers = userSessionService.getAllActiveUsers();
+            // const userSession = activeUsers.find(session => session.socketConnection === socket);
 
-            if (userSession) {
-                try {
-                    await userSessionService.stopUserSession(userSession.userId);
-                } catch (error) {
-                    console.error('Error stopping user session:', error);
-                }
-            }
+            // if (userSession) {
+            //     try {
+            //         await userSessionService.stopUserSession(userSession.userId);
+            //     } catch (error) {
+            //         console.error('Error stopping user session:', error);
+            //     }
+            // }
         });
     });
 

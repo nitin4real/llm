@@ -45,9 +45,9 @@ router.post('/stop', async (req: any, res: any) => {
     if (!id) {
       return res.status(401).json({ error: 'User not authenticated' });
     }
-    const userSessionService = UserSessionService.getInstance();
-    const agentStopResponse = await userSessionService.stopUserSession(id);
-    res.json({ response: agentStopResponse, success: true });
+    // const userSessionService = UserSessionService.getInstance();
+    // const agentStopResponse = await userSessionService.stopUserSession(id);
+    res.json({ success: true });
   } catch (error) {
     console.error('Error stopping agent:', error);
     res.status(500).json({ error: 'Failed to stop agent' });

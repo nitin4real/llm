@@ -25,7 +25,6 @@ router.post('/start', async (req: any, res: any) => {
       appId: rtcAppId,
       uid: rtcUid,
       rtmToken,
-    
     }
     return res.json(response);
 
@@ -33,6 +32,8 @@ router.post('/start', async (req: any, res: any) => {
     console.error('Error starting agent:', error);
     if ((error as Error).message.includes('not found')) {
       return res.status(404).json({ error: (error as Error).message });
+    } else if((error as Error).message.includes('User session already exists, Please try again later')){
+    res.status(500).json({ error: 'A user session already exists. Please try again later.' });
     }
     res.status(500).json({ error: 'Failed to start agent' });
   }

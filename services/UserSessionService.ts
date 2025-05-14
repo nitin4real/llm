@@ -179,6 +179,10 @@ class UserSessionService {
             throw new Error('User not found');
         }
 
+        if (this.getUserSession(userId)) {
+            throw new Error('A user session already exists. Please try again later.');
+        }
+
         const agentRTCUid = Number(`${userId}1`);
         const backendRtmId = Number(`${userId}2`);
 

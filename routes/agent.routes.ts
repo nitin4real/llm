@@ -33,7 +33,7 @@ router.post('/start', async (req: any, res: any) => {
     if ((error as Error).message.includes('not found')) {
       return res.status(404).json({ error: (error as Error).message });
     } else if((error as Error).message.includes('A user session already exists. Please try again later.')){
-    res.status(500).json({ error: 'A user session already exists. Please try again later.' });
+    return res.status(500).json({ error: 'A user session already exists. Please try again later.' });
     }
     res.status(500).json({ error: 'Failed to start agent' });
   }

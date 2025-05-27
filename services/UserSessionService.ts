@@ -279,6 +279,16 @@ class UserSessionService {
     public updateUserActivity(userId: number, updates: Partial<UserSession>): void {
         const userSession = this.activeUsers.get(userId);
         if (userSession) {
+            const currentTime = Date.now();
+            const secondsSinceLastHeartbeat = (currentTime - userSession.lastHeartbeat) / 1000;
+            const newSecondsRemaining = userSession.secondsRemaining - secondsSinceLastHeartbeat;
+            userMetadataDb.updateUserMetadata(userId, { remainingSeconds: newSecondsRemaining });
+            if (newSecondsRemaining <= 0) {
+                // send stop signal to socket
+                userSession.socketConnection?.emit('timeout', {
+                    message: 'You have run out of platform usage time. Please try again later.'
+                });
+            }
             this.setUserSession(userId, { ...userSession, ...updates });
         }
     }

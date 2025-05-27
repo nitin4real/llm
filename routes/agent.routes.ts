@@ -32,8 +32,10 @@ router.post('/start', async (req: any, res: any) => {
     console.error('Error starting agent:', error);
     if ((error as Error).message.includes('not found')) {
       return res.status(404).json({ error: (error as Error).message });
-    } else if((error as Error).message.includes('A user session already exists. Please try again later.')){
-    return res.status(500).json({ error: 'A user session already exists. Please try again later.' });
+    } else if ((error as Error).message.includes('A user session already exists. Please try again later.')) {
+      return res.status(500).json({ error: 'A user session already exists. Please try again later.' });
+    } else if ((error as Error).message.includes('User has no remaining seconds')) {
+      return res.status(500).json({ error: 'Platform usage time has expired. Please contact admin for more information.' });
     }
     res.status(500).json({ error: 'Failed to start agent' });
   }

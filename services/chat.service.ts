@@ -4,6 +4,7 @@ import UserSessionService, { UserSession } from "./UserSessionService";
 import { listOfImagesWithConcepts } from '../db/businessDb'
 import loggerService from "./logger.service";
 import { ChatCompletionTool } from "openai/resources/chat/completions";
+import { userMetadataDb } from "../db/user-metadata.db";
 class ChatService {
     // make this class singleton
     private static instance: ChatService;
@@ -90,6 +91,10 @@ class ChatService {
         const userSession = this.getUserSession(userId);
         if (!userSession) {
             throw new Error("User session not found");
+        }
+        const userMetadata = userMetadataDb.getUserMetadata(userId);
+        if (userMetadata.metadata?.remainingSeconds && userMetadata.metadata.remainingSeconds <= 0) {
+            throw new Error("User has no remaining seconds");
         }
         const userFunctions = this.getUserFunctions(userId)
         const lastMessage = messages[messages.length - 1];

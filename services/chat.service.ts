@@ -129,7 +129,7 @@ class ChatService {
         }
         const io = userSession.socketConnection
         if(!io) return
-        loggerService.info('Sending message to user', functionArguments.speechToUser);
+        // loggerService.info('Sending message to user', functionArguments.speechToUser);
         if (functionName === "show_question") {
             messages.push({
                 role: "tool",

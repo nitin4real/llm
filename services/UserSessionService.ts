@@ -127,7 +127,7 @@ class UserSessionService {
 
         const { userId, secondsRemaining } = heartbeat;
         try {
-            userMetadataDb.updateUserMetadata(userId, { remainingSeconds: Math.floor(secondsRemaining) });
+            // userMetadataDb.updateUserMetadata(userId, { remainingSeconds: Math.floor(secondsRemaining) });
         } catch (error) {
             console.error(`Error updating user ${userId}:`, error);
         }
@@ -280,7 +280,7 @@ class UserSessionService {
         const userSession = this.activeUsers.get(userId);
         if (userSession) {
             const currentTime = Date.now();
-            const secondsSinceLastHeartbeat = (currentTime - userSession.lastHeartbeat) / 1000;
+            const secondsSinceLastHeartbeat = Math.floor((currentTime - userSession.lastHeartbeat) / 1000);
             const newSecondsRemaining = userSession.secondsRemaining - secondsSinceLastHeartbeat;
             userMetadataDb.updateUserMetadata(userId, { remainingSeconds: newSecondsRemaining });
             if (newSecondsRemaining <= 0) {
